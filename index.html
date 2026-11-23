@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulador de frenado · Proyecto ABPro</title>
+<title>Simulador de frenado</title>
 <style>
   :root {
     --rojo: #e30513; --rojo-osc: #b8040f; --gris: #93959a; --gris-osc: #595959;
@@ -12,14 +12,9 @@
   }
   * { box-sizing: border-box; }
   body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--fondo); color: var(--tinta); }
-  header { background: var(--sup); border-top: 10px solid var(--gris); position: relative; }
-  header::before { content: ""; position: absolute; top: -10px; right: 6%; width: 16%; height: 10px; background: var(--rojo); }
-  .cab { max-width: 1200px; margin: 0 auto; display: flex; align-items: stretch; gap: 24px; padding: 0 20px; }
-  .bloque { background: var(--rojo); color: #fff; padding: 14px 18px 16px; font-weight: bold; font-size: 13px; letter-spacing: .5px; min-width: 150px; }
-  .bloque .marca { font-size: 26px; letter-spacing: 0; margin-top: 8px; font-family: Calibri, Arial, sans-serif; }
-  .titulo { padding: 16px 0; }
-  .titulo h1 { margin: 0 0 4px; font-size: 22px; }
-  .titulo p { margin: 0; color: var(--tinta2); font-size: 14px; }
+  header { background: var(--sup); }
+  .cab { max-width: 1200px; margin: 0 auto; padding: 18px 20px 6px; }
+  .cab h1 { margin: 0; font-size: 22px; }
   nav { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; gap: 4px; flex-wrap: wrap; }
   nav button { border: 0; background: transparent; padding: 12px 16px; font: inherit; font-size: 15px; color: var(--tinta2); cursor: pointer; border-bottom: 3px solid transparent; }
   nav button.on { color: var(--tinta); font-weight: bold; border-bottom-color: var(--rojo); }
@@ -64,19 +59,11 @@
   td.num, th.num { text-align: right; }
   .tip { position: fixed; pointer-events: none; background: #fff; border: 1px solid var(--linea); box-shadow: 0 2px 8px rgba(0,0,0,.12); border-radius: 6px; padding: 6px 10px; font-size: 12px; display: none; z-index: 10; }
   .tip .sw { display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle; }
-  footer { max-width: 1200px; margin: 0 auto; padding: 10px 20px 30px; font-size: 12px; color: var(--tinta3); }
-  .pie { height: 18px; background: var(--rojo); }
 </style>
 </head>
 <body>
 <header>
-  <div class="cab">
-    <div class="bloque">MECÁNICA<div class="marca">inacap</div></div>
-    <div class="titulo">
-      <h1>Simulador del sistema de frenado · Chevrolet Sail</h1>
-      <p>Proyecto ABPro · Cálculo Diferencial · Optimización cinemática y dinámica del frenado mediante derivadas</p>
-    </div>
-  </div>
+  <div class="cab"><h1>Simulador del sistema de frenado</h1></div>
 </header>
 <div class="barra-nav"><nav id="nav">
   <button data-t="t1" class="on">1 · Velocidad y frenado</button>
@@ -213,10 +200,6 @@
   </div>
 </section>
 </main>
-<footer>
-  Modelos del informe ABPro «Optimización cinemática y dinámica del sistema de frenado mediante modelado matemático y cálculo diferencial». Datos del vehículo: masa 1.103 kg, distancia entre ejes 2,50 m. Fuentes: Serway y Jewett (2019); Stewart (2018); Gillespie (1992); Limpert (2011); 49 CFR § 571.106 (FMVSS 106).
-</footer>
-<div class="pie"></div>
 <div class="tip" id="tip"></div>
 
 <script>
