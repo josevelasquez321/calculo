@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de frenado · Proyecto ABPro</title>
+<style>
+  :root {
+    --rojo: #e30513; --rojo-osc: #b8040f; --gris: #93959a; --gris-osc: #595959;
+    --fondo: #f5f5f3; --sup: #ffffff; --tinta: #0b0b0b; --tinta2: #52514e; --tinta3: #8a8984;
+    --linea: #e6e5e1; --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--fondo); color: var(--tinta); }
+  header { background: var(--sup); border-top: 10px solid var(--gris); position: relative; }
+  header::before { content: ""; position: absolute; top: -10px; right: 6%; width: 16%; height: 10px; background: var(--rojo); }
+  .cab { max-width: 1200px; margin: 0 auto; display: flex; align-items: stretch; gap: 24px; padding: 0 20px; }
+  .bloque { background: var(--rojo); color: #fff; padding: 14px 18px 16px; font-weight: bold; font-size: 13px; letter-spacing: .5px; min-width: 150px; }
+  .bloque .marca { font-size: 26px; letter-spacing: 0; margin-top: 8px; font-family: Calibri, Arial, sans-serif; }
+  .titulo { padding: 16px 0; }
+  .titulo h1 { margin: 0 0 4px; font-size: 22px; }
+  .titulo p { margin: 0; color: var(--tinta2); font-size: 14px; }
+  nav { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; gap: 4px; flex-wrap: wrap; }
+  nav button { border: 0; background: transparent; padding: 12px 16px; font: inherit; font-size: 15px; color: var(--tinta2); cursor: pointer; border-bottom: 3px solid transparent; }
+  nav button.on { color: var(--tinta); font-weight: bold; border-bottom-color: var(--rojo); }
+  .barra-nav { background: var(--sup); border-bottom: 1px solid var(--linea); }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .tab { display: none; }
+  .tab.on { display: block; }
+  .pregunta { font-size: 15px; color: var(--tinta2); margin: 0 0 16px; }
+  .pregunta b { color: var(--tinta); }
+  .grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--sup); border: 1px solid var(--linea); border-radius: 8px; padding: 16px; }
+  .panel h3 { margin: 0 0 12px; font-size: 15px; }
+  .ctrl { margin-bottom: 14px; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 13px; color: var(--tinta2); margin-bottom: 4px; }
+  .ctrl label b { color: var(--tinta); font-size: 14px; }
+  input[type=range] { width: 100%; accent-color: var(--rojo); }
+  select { width: 100%; padding: 6px; font: inherit; font-size: 14px; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; margin-bottom: 12px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: var(--sup); border: 1px solid var(--linea); border-radius: 8px; padding: 12px 14px; }
+  .kpi .v { font-size: 24px; font-weight: bold; }
+  .kpi .v small { font-size: 14px; font-weight: normal; color: var(--tinta2); }
+  .kpi .l { font-size: 12px; color: var(--tinta2); margin-top: 2px; }
+  .graf { background: var(--sup); border: 1px solid var(--linea); border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+  .graf h4 { margin: 0 0 6px; font-size: 14px; }
+  .graf canvas { width: 100%; height: 260px; display: block; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .dos { grid-template-columns: 1fr; } }
+  .ec { background: #fbfbfa; border-left: 4px solid var(--rojo); padding: 10px 14px; margin: 8px 0 0; font-family: "Cambria Math", "Times New Roman", serif; font-size: 16px; line-height: 1.7; }
+  .ec .n { color: var(--rojo-osc); font-weight: bold; }
+  .nota { font-size: 12px; color: var(--tinta3); margin-top: 8px; }
+  .btn { background: var(--rojo); color: #fff; border: 0; border-radius: 6px; padding: 10px 16px; font: inherit; font-weight: bold; cursor: pointer; }
+  .btn:hover { background: var(--rojo-osc); }
+  .btn.sec { background: var(--gris-osc); }
+  #pista { width: 100%; height: 190px; display: block; }
+  .vivo { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; margin: 8px 0; color: var(--tinta2); }
+  .vivo b { color: var(--tinta); font-size: 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { background: var(--gris-osc); color: #fff; text-align: left; padding: 6px 8px; }
+  td { border-bottom: 1px solid var(--linea); padding: 6px 8px; }
+  td.num, th.num { text-align: right; }
+  .tip { position: fixed; pointer-events: none; background: #fff; border: 1px solid var(--linea); box-shadow: 0 2px 8px rgba(0,0,0,.12); border-radius: 6px; padding: 6px 10px; font-size: 12px; display: none; z-index: 10; }
+  .tip .sw { display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle; }
+  footer { max-width: 1200px; margin: 0 auto; padding: 10px 20px 30px; font-size: 12px; color: var(--tinta3); }
+  .pie { height: 18px; background: var(--rojo); }
+</style>
+</head>
+<body>
+<header>
+  <div class="cab">
+    <div class="bloque">MECÁNICA<div class="marca">inacap</div></div>
+    <div class="titulo">
+      <h1>Simulador del sistema de frenado · Chevrolet Sail</h1>
+      <p>Proyecto ABPro · Cálculo Diferencial · Optimización cinemática y dinámica del frenado mediante derivadas</p>
+    </div>
+  </div>
+</header>
+<div class="barra-nav"><nav id="nav">
+  <button data-t="t1" class="on">1 · Velocidad y frenado</button>
+  <button data-t="t2">2 · Masa y carga</button>
+  <button data-t="t3">3 · Energía y temperatura</button>
+  <button data-t="t4">4 · Presión hidráulica</button>
+</nav></div>
+
+<main>
+<!-- ============ TAB 1 ============ -->
+<section class="tab on" id="t1">
+  <p class="pregunta"><b>¿Cómo afectan la velocidad y la aceleración al frenado?</b> x(t) es la posición; su derivada es la velocidad y la segunda derivada es la aceleración.</p>
+  <div class="grid">
+    <div class="panel">
+      <h3>Parámetros</h3>
+      <div class="ctrl"><label>Velocidad inicial <b id="o1v">100 km/h</b></label><input id="i1v" type="range" min="20" max="140" step="5" value="100"></div>
+      <div class="ctrl"><label>Deceleración de frenado <b id="o1a">6,0 m/s²</b></label><input id="i1a" type="range" min="3" max="9" step="0.1" value="6"></div>
+      <div class="ctrl"><label>Tiempo de reacción <b id="o1r">1,0 s</b></label><input id="i1r" type="range" min="0.5" max="2.5" step="0.1" value="1"></div>
+      <div class="ctrl"><label>Masa del vehículo <b id="o1m">1.103 kg</b></label><input id="i1m" type="range" min="900" max="1600" step="1" value="1103"></div>
+      <div class="check"><input id="i1aire" type="checkbox"><label for="i1aire">Incluir resistencia del aire: m·dv/dt = −(α + βv²)</label></div>
+      <div class="check"><input id="i1cmp" type="checkbox" checked><label for="i1cmp">Comparar con otra velocidad</label></div>
+      <div class="ctrl" id="c1v2"><label>Segunda velocidad <b id="o1v2">110 km/h</b></label><input id="i1v2" type="range" min="20" max="140" step="5" value="110"></div>
+      <button class="btn" id="b1play">▶ Simular frenada</button>
+      <button class="btn sec" id="b1reset">Reiniciar</button>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k1d">–</div><div class="l">Distancia de frenado</div></div>
+        <div class="kpi"><div class="v" id="k1dt">–</div><div class="l">Distancia total de detención (reacción + frenado)</div></div>
+        <div class="kpi"><div class="v" id="k1t">–</div><div class="l">Tiempo de frenado</div></div>
+        <div class="kpi"><div class="v" id="k1s">–</div><div class="l">Metros extra por cada km/h más: d(d)/dv₀</div></div>
+      </div>
+      <div class="graf">
+        <h4>Frenada en la pista</h4>
+        <canvas id="pista"></canvas>
+        <div class="vivo" id="vivo"></div>
+      </div>
+      <div class="dos">
+        <div class="graf"><h4>Velocidad v(t) = dx/dt</h4><canvas id="g1v"></canvas></div>
+        <div class="graf"><h4>Posición x(t)</h4><canvas id="g1x"></canvas></div>
+      </div>
+      <div class="graf"><h4>Distancia según la velocidad inicial: d = v₀²/(2a)</h4><canvas id="g1d"></canvas></div>
+      <div class="panel"><h3>Ecuaciones con los valores actuales</h3><div class="ec" id="ec1"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TAB 2 ============ -->
+<section class="tab" id="t2">
+  <p class="pregunta"><b>¿Cómo influye la masa en la distancia de frenado?</b> Si los frenos entregan una fuerza fija, a = F/m y la distancia crece con la masa. Si el límite es el neumático, a = μ·g y la masa no influye.</p>
+  <div class="grid">
+    <div class="panel">
+      <h3>Parámetros</h3>
+      <div class="ctrl"><label>Masa del vehículo <b id="o2m">1.103 kg</b></label><input id="i2m" type="range" min="900" max="1600" step="1" value="1103"></div>
+      <div class="ctrl"><label>Velocidad inicial <b id="o2v">100 km/h</b></label><input id="i2v" type="range" min="20" max="140" step="5" value="100"></div>
+      <div class="ctrl"><label>Fuerza máxima de los frenos <b id="o2f">6.618 N</b></label><input id="i2f" type="range" min="4000" max="10000" step="50" value="6618"></div>
+      <div class="ctrl"><label>Adherencia del neumático μ <b id="o2mu">0,80</b></label><input id="i2mu" type="range" min="0.3" max="1" step="0.05" value="0.8"></div>
+      <div class="ctrl"><label>Altura del centro de gravedad h <b id="o2h">0,55 m</b></label><input id="i2h" type="range" min="0.4" max="0.8" step="0.01" value="0.55"></div>
+      <div class="ctrl"><label>Distancia entre ejes L <b id="o2l">2,50 m</b></label><input id="i2l" type="range" min="2.2" max="3" step="0.01" value="2.5"></div>
+      <p class="nota">El vehículo frena con la menor de las dos deceleraciones: la de los frenos (F/m) o la del neumático (μ·g).</p>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k2a">–</div><div class="l">Deceleración real</div></div>
+        <div class="kpi"><div class="v" id="k2d">–</div><div class="l">Distancia de frenado</div></div>
+        <div class="kpi"><div class="v" id="k2lim">–</div><div class="l">Qué limita el frenado</div></div>
+        <div class="kpi"><div class="v" id="k2del">–</div><div class="l">Peso sobre el eje delantero al frenar</div></div>
+      </div>
+      <div class="graf"><h4>Distancia de frenado según la masa</h4><canvas id="g2m"></canvas></div>
+      <div class="graf"><h4>Carga por eje: estática y al frenar (N)</h4><canvas id="g2e" style="height:200px"></canvas></div>
+      <div class="panel"><h3>Ecuaciones con los valores actuales</h3><div class="ec" id="ec2"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TAB 3 ============ -->
+<section class="tab" id="t3">
+  <p class="pregunta"><b>¿Qué relación hay entre la energía cinética y el calor en los discos?</b> La potencia de frenado es −dEc/dt = m·a·v(t), por lo que dT/dt es proporcional a la velocidad.</p>
+  <div class="grid">
+    <div class="panel">
+      <h3>Parámetros</h3>
+      <div class="ctrl"><label>Velocidad inicial <b id="o3v">100 km/h</b></label><input id="i3v" type="range" min="20" max="140" step="5" value="100"></div>
+      <div class="ctrl"><label>Masa del vehículo <b id="o3m">1.103 kg</b></label><input id="i3m" type="range" min="900" max="1600" step="1" value="1103"></div>
+      <div class="ctrl"><label>Deceleración <b id="o3a">6,0 m/s²</b></label><input id="i3a" type="range" min="3" max="9" step="0.1" value="6"></div>
+      <div class="ctrl"><label>Masa de cada disco delantero <b id="o3md">5,0 kg</b></label><input id="i3md" type="range" min="3" max="9" step="0.1" value="5"></div>
+      <div class="ctrl"><label>Número de frenadas seguidas <b id="o3n">10</b></label><input id="i3n" type="range" min="1" max="20" step="1" value="10"></div>
+      <div class="ctrl"><label>Tiempo entre frenadas <b id="o3c">60 s</b></label><input id="i3c" type="range" min="20" max="180" step="5" value="60"></div>
+      <p class="nota">Supuestos: 90 % del calor queda en el disco; c = 460 J/(kg·°C); enfriamiento de Newton con τ = 250 s (macizo), 150 s (ventilado) y 130 s (ventilado ranurado, +20 % de masa).</p>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k3e">–</div><div class="l">Energía cinética a disipar</div></div>
+        <div class="kpi"><div class="v" id="k3dt">–</div><div class="l">Aumento de temperatura por frenada (disco delantero)</div></div>
+        <div class="kpi"><div class="v" id="k3r">–</div><div class="l">dT/dt al inicio de la frenada</div></div>
+        <div class="kpi"><div class="v" id="k3p">–</div><div class="l">Temperatura máxima, disco ventilado actual</div></div>
+      </div>
+      <div class="dos">
+        <div class="graf"><h4>Rapidez de calentamiento dT/dt (°C/s)</h4><canvas id="g3r"></canvas></div>
+        <div class="graf"><h4>Temperatura del disco T(t) en una frenada (°C)</h4><canvas id="g3t"></canvas></div>
+      </div>
+      <div class="graf"><h4>Frenadas repetidas: temperatura del disco (°C)</h4><canvas id="g3s" style="height:300px"></canvas></div>
+      <div class="panel"><h3>Ecuaciones con los valores actuales</h3><div class="ec" id="ec3"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TAB 4 ============ -->
+<section class="tab" id="t4">
+  <p class="pregunta"><b>¿Cómo modela el cálculo diferencial la presión hidráulica?</b> La presión sube como P(t) = P<sub>máx</sub>(1 − e<sup>−t/τ</sup>). Una línea acerada se expande menos que una manguera de goma, por lo que su τ es menor.</p>
+  <div class="grid">
+    <div class="panel">
+      <h3>Parámetros</h3>
+      <div class="ctrl"><label>Presión máxima de mordida <b id="o4p">80 bar</b></label><input id="i4p" type="range" min="40" max="120" step="5" value="80"></div>
+      <div class="ctrl"><label>τ manguera de goma <b id="o4g">0,12 s</b></label><input id="i4g" type="range" min="0.04" max="0.3" step="0.01" value="0.12"></div>
+      <div class="ctrl"><label>τ línea acerada <b id="o4s">0,08 s</b></label><input id="i4s" type="range" min="0.02" max="0.3" step="0.01" value="0.08"></div>
+      <div class="ctrl"><label>Velocidad inicial <b id="o4v">100 km/h</b></label><input id="i4v" type="range" min="20" max="140" step="5" value="100"></div>
+      <div class="ctrl"><label>Deceleración máxima <b id="o4a">6,0 m/s²</b></label><input id="i4a" type="range" min="3" max="9" step="0.1" value="6"></div>
+      <p class="nota">Los valores de τ son supuestos para la simulación; se pueden ajustar con mediciones.</p>
+    </div>
+    <div>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k4r">–</div><div class="l">dP/dt inicial (goma → acerada)</div></div>
+        <div class="kpi"><div class="v" id="k4t">–</div><div class="l">Tiempo para llegar al 90 % de la presión</div></div>
+        <div class="kpi"><div class="v" id="k4d">–</div><div class="l">Distancia de frenado (goma → acerada)</div></div>
+        <div class="kpi"><div class="v" id="k4ah">–</div><div class="l">Metros que se ahorran con la línea acerada</div></div>
+      </div>
+      <div class="dos">
+        <div class="graf"><h4>Presión en el caliper P(t) (bar)</h4><canvas id="g4p"></canvas></div>
+        <div class="graf"><h4>Rapidez de subida dP/dt (bar/s)</h4><canvas id="g4r"></canvas></div>
+      </div>
+      <div class="graf"><h4>Velocidad en el primer segundo de la frenada (km/h): aquí se ve el retraso de la presión</h4><canvas id="g4v"></canvas></div>
+      <div class="panel"><h3>Ecuaciones con los valores actuales</h3><div class="ec" id="ec4"></div></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>
+  Modelos del informe ABPro «Optimización cinemática y dinámica del sistema de frenado mediante modelado matemático y cálculo diferencial». Datos del vehículo: masa 1.103 kg, distancia entre ejes 2,50 m. Fuentes: Serway y Jewett (2019); Stewart (2018); Gillespie (1992); Limpert (2011); 49 CFR § 571.106 (FMVSS 106).
+</footer>
+<div class="pie"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+"use strict";
+// ---------------- utilidades ----------------
+const $ = (id) => document.getElementById(id);
+const C = { s1: "#2a78d6", s2: "#eb6834", s3: "#1baf7a", gris: "#93959a", rojo: "#e30513", tinta: "#0b0b0b", tinta2: "#52514e", linea: "#e6e5e1" };
+const g = 9.81, BETA = 0.5 * 1.2 * 0.33 * 2.1, C_FE = 460, GAMMA = 0.9;
+const nf = (x, d = 1) => x.toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d });
+const kmh = (v) => v / 3.6;
+const val = (id) => parseFloat($(id).value);
+const linspace = (a, b, n) => Array.from({ length: n }, (_, i) => a + (b - a) * i / (n - 1));
+
+// ---------------- gráfico de líneas en canvas ----------------
+const charts = {};
+function niceStep(range, n) {
+  const raw = range / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+}
+function chart(id, cfg) { charts[id] = cfg; draw(id); }
+function draw(id, hoverX) {
+  const cv = $(id), cfg = charts[id]; if (!cfg || !cv.offsetParent) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  const pad = { l: 52, r: 14, t: cfg.legend ? 26 : 10, b: 36 };
+  let xs = [], ys = [];
+  cfg.series.forEach((s) => s.pts.forEach((p) => { xs.push(p[0]); ys.push(p[1]); }));
+  (cfg.marks || []).forEach((m) => { xs.push(m.x); ys.push(m.y); });
+  if (cfg.hline != null) ys.push(cfg.hline);
+  let x0 = cfg.xmin ?? Math.min(...xs), x1 = cfg.xmax ?? Math.max(...xs);
+  let y0 = cfg.ymin ?? Math.min(0, ...ys), y1 = cfg.ymax ?? Math.max(...ys) * 1.08;
+  if (x1 === x0) x1 = x0 + 1; if (y1 === y0) y1 = y0 + 1;
+  const X = (x) => pad.l + (x - x0) / (x1 - x0) * (W - pad.l - pad.r);
+  const Y = (y) => H - pad.b - (y - y0) / (y1 - y0) * (H - pad.t - pad.b);
+  ctx.font = "11px Arial"; ctx.fillStyle = C.tinta2; ctx.strokeStyle = C.linea; ctx.lineWidth = 1;
+  const sy = niceStep(y1 - y0, 5);
+  for (let v = Math.ceil(y0 / sy) * sy; v <= y1 + 1e-9; v += sy) {
+    ctx.beginPath(); ctx.moveTo(pad.l, Y(v)); ctx.lineTo(W - pad.r, Y(v)); ctx.stroke();
+    ctx.textAlign = "right"; ctx.fillText(nf(v, sy < 1 ? 1 : 0), pad.l - 6, Y(v) + 4);
+  }
+  const sx = niceStep(x1 - x0, 6);
+  for (let v = Math.ceil(x0 / sx) * sx; v <= x1 + 1e-9; v += sx) {
+    ctx.textAlign = "center"; ctx.fillText(nf(v, sx < 1 ? (sx < 0.1 ? 2 : 1) : 0), X(v), H - pad.b + 15);
+  }
+  ctx.strokeStyle = C.tinta2; ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
+  ctx.fillStyle = C.tinta2; ctx.textAlign = "center"; ctx.fillText(cfg.xlabel || "", (pad.l + W - pad.r) / 2, H - 6);
+  if (cfg.hline != null) {
+    ctx.setLineDash([6, 4]); ctx.strokeStyle = C.tinta2; ctx.beginPath(); ctx.moveTo(pad.l, Y(cfg.hline)); ctx.lineTo(W - pad.r, Y(cfg.hline)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.textAlign = "right"; ctx.fillText(cfg.hlabel || "", W - pad.r - 4, Y(cfg.hline) - 5);
+  }
+  cfg.series.forEach((s) => {
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.w || 2; ctx.setLineDash(s.dash || []); ctx.beginPath();
+    s.pts.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.stroke(); ctx.setLineDash([]);
+  });
+  (cfg.marks || []).forEach((m) => {
+    ctx.fillStyle = m.color; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(m.x), Y(m.y), 5, 0, 7); ctx.fill(); ctx.stroke();
+    if (m.label) { ctx.fillStyle = C.tinta; ctx.textAlign = X(m.x) > W - pad.r - 30 ? "right" : "center"; ctx.font = "bold 11px Arial"; ctx.fillText(m.label, X(m.x), Y(m.y) - 10); ctx.font = "11px Arial"; }
+  });
+  if (cfg.legend) {
+    let lx = pad.l; ctx.textAlign = "left";
+    cfg.series.filter((s) => s.name).forEach((s) => {
+      ctx.fillStyle = s.color; ctx.fillRect(lx, 9, 14, 3); ctx.fillStyle = C.tinta2; ctx.fillText(s.name, lx + 19, 14);
+      lx += 30 + ctx.measureText(s.name).width;
+    });
+  }
+  // hover
+  cfg._map = { X, Y, x0, x1, pad, W };
+  if (hoverX != null && hoverX >= x0 && hoverX <= x1) {
+    ctx.strokeStyle = C.gris; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(hoverX), pad.t); ctx.lineTo(X(hoverX), H - pad.b); ctx.stroke();
+    const rows = [];
+    cfg.series.forEach((s) => {
+      if (!s.pts.length || hoverX < s.pts[0][0] || hoverX > s.pts[s.pts.length - 1][0]) return;
+      let best = s.pts[0]; for (const p of s.pts) if (Math.abs(p[0] - hoverX) < Math.abs(best[0] - hoverX)) best = p;
+      ctx.fillStyle = s.color; ctx.beginPath(); ctx.arc(X(best[0]), Y(best[1]), 4, 0, 7); ctx.fill();
+      rows.push(`<div><span class="sw" style="background:${s.color}"></span>${s.name || cfg.ylabel || ""}: <b>${nf(best[1], cfg.yd ?? 1)}</b> ${cfg.yu || ""}</div>`);
+    });
+    return `<div style="color:#52514e">${cfg.xlabel}: <b>${nf(hoverX, cfg.xd ?? 2)}</b></div>` + rows.join("");
+  }
+}
+const tip = $("tip");
+document.querySelectorAll("canvas").forEach((cv) => {
+  if (cv.id === "pista") return;
+  cv.addEventListener("mousemove", (e) => {
+    const cfg = charts[cv.id]; if (!cfg || !cfg._map) return;
+    const r = cv.getBoundingClientRect(), m = cfg._map;
+    const x = m.x0 + (e.clientX - r.left - m.pad.l) / (m.W - m.pad.l - m.pad.r) * (m.x1 - m.x0);
+    const html = draw(cv.id, x);
+    if (html) { tip.innerHTML = html; tip.style.display = "block"; tip.style.left = (e.clientX + 14) + "px"; tip.style.top = (e.clientY + 10) + "px"; }
+    else tip.style.display = "none";
+  });
+  cv.addEventListener("mouseleave", () => { tip.style.display = "none"; draw(cv.id); });
+});
+window.addEventListener("resize", () => { Object.keys(charts).forEach((id) => draw(id)); drawTrack(anim.t); });
+
+// ---------------- pestañas ----------------
+document.querySelectorAll("#nav button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("#nav button").forEach((x) => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("on", t.id === b.dataset.t));
+  Object.keys(charts).forEach((id) => draw(id)); drawTrack(anim.t);
+}));
+
+// ---------------- modelo de frenado ----------------
+function brake(v0, a, m, aire) {
+  if (!aire) {
+    const ts = v0 / a;
+    return { ts, d: v0 * v0 / (2 * a), v: (t) => Math.max(0, v0 - a * t), x: (t) => { t = Math.min(t, ts); return v0 * t - a * t * t / 2; } };
+  }
+  const al = m * a, k = Math.sqrt(al * BETA) / m, th0 = Math.atan(v0 * Math.sqrt(BETA / al)), ts = th0 / k;
+  return { ts, d: m / (2 * BETA) * Math.log(1 + BETA * v0 * v0 / al),
+    v: (t) => (t >= ts ? 0 : Math.sqrt(al / BETA) * Math.tan(th0 - k * t)),
+    x: (t) => { t = Math.min(t, ts); return m / BETA * (Math.log(Math.cos(th0 - k * t)) - Math.log(Math.cos(th0))); } };
+}
+
+// ---------------- TAB 1 ----------------
+const anim = { t: null, raf: null, start: 0 };
+let S1 = null;
+function upd1() {
+  const V = val("i1v"), a = val("i1a"), tr = val("i1r"), m = val("i1m"), aire = $("i1aire").checked, cmp = $("i1cmp").checked, V2 = val("i1v2");
+  $("o1v").textContent = V + " km/h"; $("o1a").textContent = nf(a) + " m/s²"; $("o1r").textContent = nf(tr) + " s";
+  $("o1m").textContent = nf(m, 0) + " kg"; $("o1v2").textContent = V2 + " km/h"; $("c1v2").style.display = cmp ? "" : "none";
+  const v0 = kmh(V), b = brake(v0, a, m, aire);
+  const cars = [{ V, v0, b, color: C.s1 }];
+  if (cmp) { const w0 = kmh(V2); cars.push({ V: V2, v0: w0, b: brake(w0, a, m, aire), color: C.s2 }); }
+  S1 = { cars, tr, a };
+  $("k1d").innerHTML = nf(b.d) + " <small>m</small>";
+  $("k1dt").innerHTML = nf(b.d + v0 * tr) + " <small>m</small>";
+  $("k1t").innerHTML = nf(b.ts, 2) + " <small>s</small>";
+  $("k1s").innerHTML = nf(v0 / a / 3.6, 2) + " <small>m</small>";
+  const T = Math.max(...cars.map((c) => c.b.ts));
+  chart("g1v", { xlabel: "t (s)", ylabel: "v", yu: "km/h", legend: cmp, xmin: 0, xmax: T, ymin: 0,
+    series: cars.map((c) => ({ name: c.V + " km/h", color: c.color, pts: linspace(0, c.b.ts, 120).map((t) => [t, c.b.v(t) * 3.6]) })) });
+  chart("g1x", { xlabel: "t (s)", ylabel: "x", yu: "m", legend: cmp, xmin: 0, xmax: T, ymin: 0,
+    series: cars.map((c) => ({ name: c.V + " km/h", color: c.color, pts: linspace(0, c.b.ts, 120).map((t) => [t, c.b.x(t)]) })),
+    marks: cars.map((c) => ({ x: c.b.ts, y: c.b.d, color: c.color, label: nf(c.b.d) + " m" })) });
+  const Vs = linspace(0, 140, 141);
+  chart("g1d", { xlabel: "Velocidad inicial (km/h)", ylabel: "d", yu: "m", xd: 0, legend: true, xmin: 0, xmax: 140, ymin: 0,
+    series: [
+      { name: "Detención total (reacción + frenado)", color: C.s1, pts: Vs.map((x) => [x, kmh(x) * tr + brake(kmh(x) || 1e-6, a, m, aire).d]) },
+      { name: "Solo frenado", color: C.s2, pts: Vs.map((x) => [x, brake(kmh(x) || 1e-6, a, m, aire).d]) }],
+    marks: cars.map((c) => ({ x: c.V, y: c.b.d + c.v0 * tr, color: c.color, label: nf(c.b.d + c.v0 * tr, 0) + " m" })) });
+  $("ec1").innerHTML = aire
+    ? `m·dv/dt = −(α + β·v²), α = m·a = <span class="n">${nf(m * a, 0)} N</span>, β = ½ρC<sub>d</sub>A = <span class="n">${nf(BETA, 3)} kg/m</span><br>
+       v(t) = √(α/β)·tan(θ₀ − (√(αβ)/m)·t), θ₀ = arctan(v₀√(β/α))<br>
+       d = (m/2β)·ln(1 + βv₀²/α) = <span class="n">${nf(b.d)} m</span> (sin aire: ${nf(v0 * v0 / (2 * a))} m)`
+    : `x(t) = v₀t − ½at² = <span class="n">${nf(v0, 2)}</span>·t − <span class="n">${nf(a / 2, 2)}</span>·t²<br>
+       v(t) = dx/dt = <span class="n">${nf(v0, 2)}</span> − <span class="n">${nf(a, 1)}</span>·t &nbsp;&nbsp; a(t) = dv/dt = −<span class="n">${nf(a, 1)}</span> m/s²<br>
+       t = v₀/a = <span class="n">${nf(b.ts, 2)} s</span> &nbsp;&nbsp; d = v₀²/(2a) = <span class="n">${nf(b.d)} m</span> &nbsp;&nbsp; d(d)/dv₀ = v₀/a = <span class="n">${nf(v0 / a, 2)}</span> m por m/s`;
+  stopAnim(); drawTrack(null);
+}
+function carPos(c, t, tr) { return t <= tr ? c.v0 * t : c.v0 * tr + c.b.x(t - tr); }
+function carVel(c, t, tr) { return t <= tr ? c.v0 : c.b.v(t - tr); }
+function drawTrack(t) {
+  const cv = $("pista"); if (!S1 || !cv.offsetParent) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr; const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const { cars, tr } = S1, maxD = Math.max(...cars.map((c) => c.v0 * tr + c.b.d)) * 1.08 + 5;
+  const L = 50, R = W - 20, X = (x) => L + x / maxD * (R - L);
+  ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+  const lane = cars.length === 1 ? [H / 2 - 20] : [28, 98];
+  // escala
+  ctx.font = "11px Arial"; ctx.fillStyle = C.tinta2; ctx.strokeStyle = C.linea; ctx.textAlign = "center";
+  const st = niceStep(maxD, 8);
+  for (let x = 0; x <= maxD; x += st) { ctx.beginPath(); ctx.moveTo(X(x), 12); ctx.lineTo(X(x), H - 22); ctx.stroke(); ctx.fillText(nf(x, 0) + " m", X(x), H - 6); }
+  cars.forEach((c, i) => {
+    const y = lane[i], dr = c.v0 * tr, dt = dr + c.b.d;
+    ctx.fillStyle = "#3a3a3a"; ctx.fillRect(L - 10, y, R - L + 20, 44);
+    ctx.setLineDash([12, 10]); ctx.strokeStyle = "#ddd"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(L - 10, y + 22); ctx.lineTo(R + 10, y + 22); ctx.stroke(); ctx.setLineDash([]);
+    // zonas
+    ctx.fillStyle = "rgba(147,149,154,.55)"; ctx.fillRect(X(0), y + 38, X(dr) - X(0), 6);
+    ctx.fillStyle = "rgba(227,5,19,.8)"; ctx.fillRect(X(dr), y + 38, X(dt) - X(dr), 6);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 11px Arial"; ctx.textAlign = "left"; ctx.fillText(c.V + " km/h", L - 6, y + 14);
+    // marca de detención
+    ctx.strokeStyle = c.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X(dt), y - 4); ctx.lineTo(X(dt), y + 48); ctx.stroke();
+    ctx.fillStyle = C.tinta; ctx.textAlign = "center"; ctx.font = "bold 11px Arial"; ctx.fillText(nf(dt, 1) + " m", X(dt), y - 7);
+    // auto
+    const tt = t == null ? 0 : t, px = X(carPos(c, tt, tr));
+    ctx.fillStyle = c.color; roundRect(ctx, px - 26, y + 8, 26, 22, 4); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.75)"; ctx.fillRect(px - 9, y + 11, 6, 16);
+    const braking = t != null && t > tr && carVel(c, tt, tr) > 0;
+    ctx.fillStyle = braking ? "#ff3b3b" : "#7a1d1d"; ctx.fillRect(px - 28, y + 10, 3, 5); ctx.fillRect(px - 28, y + 23, 3, 5);
+  });
+  ctx.font = "11px Arial"; ctx.textAlign = "left"; ctx.fillStyle = C.tinta2;
+  ctx.fillStyle = "rgba(147,149,154,.8)"; ctx.fillRect(L, H - 38, 14, 5); ctx.fillStyle = C.tinta2; ctx.fillText("reacción", L + 18, H - 33);
+  ctx.fillStyle = "rgba(227,5,19,.8)"; ctx.fillRect(L + 80, H - 38, 14, 5); ctx.fillStyle = C.tinta2; ctx.fillText("frenado", L + 98, H - 33);
+  // lectura en vivo
+  if (t != null) {
+    $("vivo").innerHTML = `<span>t = <b>${nf(t, 2)} s</b></span>` + S1.cars.map((c) => {
+      const v = carVel(c, t, tr), fase = t <= tr ? "reacción" : v > 0 ? "frenando" : "detenido";
+      return `<span style="border-left:3px solid ${c.color};padding-left:6px">${c.V} km/h → v = <b>${nf(v * 3.6, 0)} km/h</b>, x = <b>${nf(carPos(c, t, tr), 1)} m</b>, a = <b>${fase === "frenando" ? "−" + nf(S1.a, 1) : "0"} m/s²</b> (${fase})</span>`;
+    }).join("");
+  } else $("vivo").innerHTML = "<span>Presiona «Simular frenada» para ver la frenada en tiempo real.</span>";
+}
+function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function stopAnim() { if (anim.raf) cancelAnimationFrame(anim.raf); anim.raf = null; anim.t = null; }
+$("b1play").addEventListener("click", () => {
+  stopAnim(); const tEnd = S1.tr + Math.max(...S1.cars.map((c) => c.b.ts)) + 0.4; anim.start = performance.now();
+  const step = (now) => { anim.t = Math.min((now - anim.start) / 1000, tEnd); drawTrack(anim.t); if (anim.t < tEnd) anim.raf = requestAnimationFrame(step); };
+  anim.raf = requestAnimationFrame(step);
+});
+$("b1reset").addEventListener("click", () => { stopAnim(); drawTrack(null); });
+["i1v", "i1a", "i1r", "i1m", "i1aire", "i1cmp", "i1v2"].forEach((id) => $(id).addEventListener("input", upd1));
+
+// ---------------- TAB 2 ----------------
+function upd2() {
+  const m = val("i2m"), V = val("i2v"), F = val("i2f"), mu = val("i2mu"), h = val("i2h"), L = val("i2l");
+  $("o2m").textContent = nf(m, 0) + " kg"; $("o2v").textContent = V + " km/h"; $("o2f").textContent = nf(F, 0) + " N";
+  $("o2mu").textContent = nf(mu, 2); $("o2h").textContent = nf(h, 2) + " m"; $("o2l").textContent = nf(L, 2) + " m";
+  const v0 = kmh(V), aS = F / m, aN = mu * g, a = Math.min(aS, aN), d = v0 * v0 / (2 * a);
+  $("k2a").innerHTML = nf(a, 2) + " <small>m/s²</small>"; $("k2d").innerHTML = nf(d) + " <small>m</small>";
+  $("k2lim").innerHTML = aS < aN ? "Frenos" : "Neumático";
+  const W = m * g, dW = m * a * h / L, fd = 0.6 * W + dW, ft = 0.4 * W - dW;
+  $("k2del").innerHTML = nf(fd / W * 100) + " <small>%</small>";
+  const ms = linspace(900, 1600, 71);
+  chart("g2m", { xlabel: "Masa (kg)", ylabel: "d", yu: "m", xd: 0, legend: true, xmin: 900, xmax: 1600, ymin: 0,
+    series: [
+      { name: "Límite de los frenos: a = F/m", color: C.s2, pts: ms.map((x) => [x, v0 * v0 * x / (2 * F)]) },
+      { name: "Límite del neumático: a = μg", color: C.s1, pts: ms.map((x) => [x, v0 * v0 / (2 * aN)]) },
+      { name: "Distancia real", color: C.tinta, w: 1.2, dash: [4, 3], pts: ms.map((x) => [x, v0 * v0 / (2 * Math.min(F / x, aN))]) }],
+    marks: [{ x: m, y: d, color: C.rojo, label: nf(d) + " m" }] });
+  barChart("g2e", [["Delantero", 0.6 * W, fd], ["Trasero", 0.4 * W, ft]]);
+  $("ec2").innerHTML = `a = mín(F/m, μg) = mín(<span class="n">${nf(aS, 2)}</span>, <span class="n">${nf(aN, 2)}</span>) = <span class="n">${nf(a, 2)} m/s²</span><br>
+    d = v₀²/(2a) = m·v₀²/(2F) si limitan los frenos → d(d)/dm = v₀²/(2F) = <span class="n">${nf(v0 * v0 / (2 * F) * 100, 2)} m</span> por cada 100 kg<br>
+    ΔW = m·a·h/L = <span class="n">${nf(dW, 0)} N</span> se trasladan del eje trasero al delantero`;
+}
+function barChart(id, rows) {
+  const cv = $(id); charts[id] = null;
+  const drawBars = () => {
+    if (!cv.offsetParent) return;
+    const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr; const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const max = Math.max(...rows.map((r) => Math.max(r[1], r[2]))) * 1.15, L = 90, R = W - 20, bh = 22;
+    ctx.font = "12px Arial";
+    rows.forEach((r, i) => {
+      const y = 30 + i * 80;
+      ctx.fillStyle = C.tinta; ctx.textAlign = "left"; ctx.fillText(r[0], 8, y + 26);
+      [[r[1], C.gris, "Estática"], [r[2], C.s2, "Al frenar"]].forEach(([v, col, lab], j) => {
+        const yy = y + j * (bh + 2), w = v / max * (R - L);
+        ctx.fillStyle = col; roundRect(ctx, L, yy, Math.max(w, 2), bh, 4); ctx.fill();
+        ctx.fillStyle = C.tinta; ctx.textAlign = "left"; ctx.fillText(`${lab}: ${nf(v, 0)} N`, L + w + 6, yy + 15);
+      });
+    });
+  };
+  cv._draw = drawBars; drawBars();
+}
+["i2m", "i2v", "i2f", "i2mu", "i2h", "i2l"].forEach((id) => $(id).addEventListener("input", upd2));
+
+// ---------------- TAB 3 ----------------
+function upd3() {
+  const V = val("i3v"), m = val("i3m"), a = val("i3a"), md = val("i3md"), n = val("i3n"), cyc = val("i3c");
+  $("o3v").textContent = V + " km/h"; $("o3m").textContent = nf(m, 0) + " kg"; $("o3a").textContent = nf(a) + " m/s²";
+  $("o3md").textContent = nf(md) + " kg"; $("o3n").textContent = n; $("o3c").textContent = cyc + " s";
+  const v0 = kmh(V), Ec = 0.5 * m * v0 * v0, phi = 0.6 + a * 0.55 / (g * 2.5), ts = v0 / a;
+  const k = GAMMA * phi * m * a / (2 * md * C_FE); // °C por metro
+  const dT = k * v0 * v0 / (2 * a), r0 = k * v0;
+  $("k3e").innerHTML = nf(Ec / 1000, 0) + " <small>kJ</small>"; $("k3dt").innerHTML = nf(dT) + " <small>°C</small>"; $("k3r").innerHTML = nf(r0) + " <small>°C/s</small>";
+  const tt = linspace(0, ts, 100);
+  chart("g3r", { xlabel: "t (s)", ylabel: "dT/dt", yu: "°C/s", xmin: 0, ymin: 0, series: [{ color: C.s2, pts: tt.map((t) => [t, k * (v0 - a * t)]) }] });
+  chart("g3t", { xlabel: "t (s)", ylabel: "T", yu: "°C", xmin: 0, ymin: 0, series: [{ color: C.s2, pts: tt.map((t) => [t, 20 + k * (v0 * t - a * t * t / 2)]) }] });
+  const discos = [["Macizo", 250, md, C.s2], ["Ventilado (actual)", 150, md, C.s1], ["Ventilado ranurado +20 % masa", 130, md * 1.2, C.s3]];
+  const series = [], picos = [];
+  discos.forEach(([nom, tau, mdi, col]) => {
+    const dTi = dT * md / mdi, pts = []; let T = 20, pico = 20;
+    for (let i = 0; i < n; i++) {
+      const t0 = i * cyc;
+      for (const s of linspace(0, ts, 12)) pts.push([t0 + s, T + dTi * (v0 * s - a * s * s / 2) / (v0 * ts / 2)]);
+      T += dTi; pico = Math.max(pico, T);
+      const rest = Math.max(cyc - ts, 0);
+      for (const s of linspace(0, rest, 30).slice(1)) pts.push([t0 + ts + s, 20 + (T - 20) * Math.exp(-s / tau)]);
+      T = 20 + (T - 20) * Math.exp(-rest / tau);
+    }
+    series.push({ name: nom, color: col, w: 1.6, pts }); picos.push(pico);
+  });
+  $("k3p").innerHTML = nf(picos[1], 0) + " <small>°C</small>";
+  chart("g3s", { xlabel: "t (s)", ylabel: "T", yu: "°C", xd: 0, legend: true, xmin: 0, ymin: 0, ymax: Math.max(400, ...picos) * 1.1, hline: 350, hlabel: "Riesgo de fading ≈ 350 °C", series });
+  $("ec3").innerHTML = `E<sub>c</sub> = ½mv² = <span class="n">${nf(Ec / 1000, 1)} kJ</span> &nbsp;&nbsp; eje delantero: φ = 0,6 + a·h/(g·L) = <span class="n">${nf(phi, 3)}</span><br>
+    dT/dt = 0,9·φ·m·a·v(t) / (2·m<sub>disco</sub>·c) = <span class="n">${nf(k, 3)}</span>·v(t) &nbsp;→&nbsp; T(t) = T₀ + <span class="n">${nf(k, 3)}</span>·x(t)<br>
+    ΔT por frenada = <span class="n">${nf(dT)} °C</span> &nbsp;&nbsp; enfriamiento: dT/dt = −(T − T<sub>amb</sub>)/τ<br>
+    Máximo en ${n} frenadas: macizo <span class="n">${nf(picos[0], 0)} °C</span>, ventilado <span class="n">${nf(picos[1], 0)} °C</span>, ranurado <span class="n">${nf(picos[2], 0)} °C</span>`;
+}
+["i3v", "i3m", "i3a", "i3md", "i3n", "i3c"].forEach((id) => $(id).addEventListener("input", upd3));
+
+// ---------------- TAB 4 ----------------
+function simRamp(v0, a, tau) {
+  const dt = 0.001, pts = []; let t = 0, v = v0, x = 0;
+  while (v > 0 && t < 60) { const ac = a * (1 - Math.exp(-t / tau)); if (pts.length === 0 || Math.round(t * 1000) % 20 === 0) pts.push([t, v * 3.6]); x += v * dt; v -= ac * dt; t += dt; }
+  pts.push([t, 0]); return { x, t, pts };
+}
+function upd4() {
+  const Pm = val("i4p"), tg = val("i4g"), ts_ = val("i4s"), V = val("i4v"), a = val("i4a");
+  $("o4p").textContent = Pm + " bar"; $("o4g").textContent = nf(tg, 2) + " s"; $("o4s").textContent = nf(ts_, 2) + " s";
+  $("o4v").textContent = V + " km/h"; $("o4a").textContent = nf(a) + " m/s²";
+  const v0 = kmh(V), rg = simRamp(v0, a, tg), rs = simRamp(v0, a, ts_), dIdeal = v0 * v0 / (2 * a);
+  $("k4r").innerHTML = `${nf(Pm / tg, 0)} → ${nf(Pm / ts_, 0)} <small>bar/s</small>`;
+  $("k4t").innerHTML = `${nf(tg * Math.LN10, 2)} → ${nf(ts_ * Math.LN10, 2)} <small>s</small>`;
+  $("k4d").innerHTML = `${nf(rg.x)} → ${nf(rs.x)} <small>m</small>`;
+  $("k4ah").innerHTML = nf(rg.x - rs.x, 2) + " <small>m</small>";
+  const tp = linspace(0, Math.max(0.6, 5 * Math.max(tg, ts_)), 200);
+  const sr = [["Manguera de goma", tg, C.s2], ["Línea acerada", ts_, C.s1]];
+  chart("g4p", { xlabel: "t (s)", ylabel: "P", yu: "bar", legend: true, xmin: 0, ymin: 0, series: sr.map(([n, t, c]) => ({ name: n, color: c, pts: tp.map((x) => [x, Pm * (1 - Math.exp(-x / t))]) })) });
+  chart("g4r", { xlabel: "t (s)", ylabel: "dP/dt", yu: "bar/s", legend: true, xmin: 0, ymin: 0, series: sr.map(([n, t, c]) => ({ name: n, color: c, pts: tp.map((x) => [x, Pm / t * Math.exp(-x / t)]) })) });
+  chart("g4v", { xlabel: "t (s)", ylabel: "v", yu: "km/h", legend: true, xmin: 0, xmax: Math.min(1, v0 / a), ymin: Math.max(0, (v0 - a * Math.min(1, v0 / a)) * 3.6 - 3), ymax: V + 2,
+    series: [{ name: "Manguera de goma", color: C.s2, pts: rg.pts }, { name: "Línea acerada", color: C.s1, pts: rs.pts },
+      { name: "Presión instantánea (ideal)", color: C.gris, dash: [5, 4], w: 1.4, pts: linspace(0, v0 / a, 200).map((t) => [t, (v0 - a * t) * 3.6]) }].map((s) => ({ ...s, pts: s.pts.filter((p) => p[0] <= Math.min(1, v0 / a) + 1e-9) })) });
+  $("ec4").innerHTML = `P(t) = <span class="n">${Pm}</span>·(1 − e<sup>−t/τ</sup>) &nbsp;→&nbsp; dP/dt = (P<sub>máx</sub>/τ)·e<sup>−t/τ</sup>, máxima en t = 0<br>
+    a(t) = a<sub>máx</sub>(1 − e<sup>−t/τ</sup>) &nbsp;→&nbsp; distancia extra ≈ v₀·τ<br>
+    Ideal: <span class="n">${nf(dIdeal)} m</span> · goma: <span class="n">${nf(rg.x)} m</span> (≈ ${nf(dIdeal)} + ${nf(v0 * tg, 2)}) · acerada: <span class="n">${nf(rs.x)} m</span> (≈ ${nf(dIdeal)} + ${nf(v0 * ts_, 2)})`;
+}
+["i4p", "i4g", "i4s", "i4v", "i4a"].forEach((id) => $(id).addEventListener("input", upd4));
+
+// barras se redibujan al cambiar de pestaña
+document.querySelectorAll("#nav button").forEach((b) => b.addEventListener("click", () => { const e = $("g2e"); if (e._draw) e._draw(); }));
+window.addEventListener("resize", () => { const e = $("g2e"); if (e._draw) e._draw(); });
+
+upd1(); upd2(); upd3(); upd4();
+</script>
+</body>
+</html>
