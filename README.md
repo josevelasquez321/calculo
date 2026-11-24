@@ -13,4 +13,4 @@ Página web interactiva del proyecto **«Optimización cinemática y dinámica d
 
 La página es un solo archivo (`index.html`) sin dependencias externas. La versión en Python que genera los gráficos del informe está en `python/simulador_frenado.py`.
 
-Los parámetros marcados como supuestos (masa del disco, constantes de tiempo, altura del centro de gravedad) deben ajustarse con mediciones reales.
+Las pruebas del proyecto se realizan en esta página, no en terreno. Los parámetros marcados como supuestos (masa del disco, constantes de tiempo, altura del centro de gravedad) son valores de referencia.
